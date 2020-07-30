@@ -114,6 +114,8 @@ class OrderController extends BaseController {
         
         //测试微信号通知
         if(!empty($notice_str_list)){
+            $exist_cache = json_decode(Cache::get("caodong_order_fail"), TRUE);
+            if(!empty($exist_cache)){$need_retry_order = array_unique(array_merge($need_retry_order, $exist_cache));}
             Cache::forever("caodong_order_fail", json_encode($need_retry_order));
             $this->_wechatCompanyNotice($notice_str_list);
         }
@@ -185,6 +187,27 @@ class OrderController extends BaseController {
             return TRUE;
         }else{
             return FALSE;
+        }
+    }
+    
+    //重试机制
+    public function RetryOrder(){
+        $notice_str_list = [];
+        $need_retry_order = [];
+        $retry_order_list = json_decode(Cache::get("caodong_order_fail"), TRUE);
+        Cache::forget("caodong_order_fail");
+        foreach($retry_order_list as $order_code){
+            $temp_str = "";
+            $temp_str = $this->_supplementOrder($order_code, "第一次失败重试");
+            if($temp_str != ""){ $notice_str_list[] = $temp_str; $need_retry_order[] = $order_code; }
+        }
+        
+        //测试微信号通知
+        if(!empty($notice_str_list)){
+            $exist_cache = json_decode(Cache::get("caodong_order_fail"), TRUE);
+            if(!empty($exist_cache)){$need_retry_order = array_unique(array_merge($need_retry_order, $exist_cache));}
+            Cache::forever("caodong_order_fail", json_encode($need_retry_order));
+            $this->_wechatCompanyNotice($notice_str_list);
         }
     }
 }
