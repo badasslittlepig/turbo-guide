@@ -114,7 +114,7 @@ class OrderController extends BaseController {
         
         //测试微信号通知
         if(!empty($notice_str_list)){
-            Cache::forever("caodong_order_fail", json_encode($notice_str_list));
+            Cache::forever("caodong_order_fail", json_encode($need_retry_order));
             $this->_wechatCompanyNotice($notice_str_list);
         }
         
