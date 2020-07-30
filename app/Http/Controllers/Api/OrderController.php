@@ -99,7 +99,13 @@ class OrderController extends BaseController {
                 if($exist_order_info->express_status != $order_check_list[$exist_order_info->order_code]["express_status"]){
                     $temp_str = $this->_supplementOrder($exist_order_info->order_code, "快递状态不同步");
                 }
-                if($temp_str != ""){ $notice_str_list[] = $temp_str; $need_retry_order[] = $exist_order_info->order_code; }
+                if($temp_str != ""){
+                    $notice_str_list[] = $temp_str;
+                    $notice_result_list = explode("--", $temp_str);
+                    if(array_pop($notice_result_list) != "处理成功"){
+                        $need_retry_order[] = $exist_order_info->order_code;;
+                    }
+                }
                 unset($order_check_list[$exist_order_info->order_code]);
             }
         }
@@ -108,7 +114,13 @@ class OrderController extends BaseController {
             $temp_str = "";
             foreach($order_check_list as $order_code => $order_check_info){
                 $temp_str = $this->_supplementOrder($order_code, "在草动中订单未找到");
-                if($temp_str != ""){ $notice_str_list[] = $temp_str; $need_retry_order[] = $order_code; }
+                if($temp_str != ""){
+                    $notice_str_list[] = $temp_str;
+                    $notice_result_list = explode("--", $temp_str);
+                    if(array_pop($notice_result_list) != "处理成功"){
+                        $need_retry_order[] = $order_code;
+                    }                    
+                }
             }
         }
         
@@ -194,12 +206,17 @@ class OrderController extends BaseController {
     public function RetryOrder(){
         $notice_str_list = [];
         $need_retry_order = [];
-        $retry_order_list = json_decode(Cache::get("caodong_order_fail"), TRUE);
-        Cache::forget("caodong_order_fail");
+        $retry_order_list = json_decode(Cache::pull("caodong_order_fail"), TRUE);
         foreach($retry_order_list as $order_code){
             $temp_str = "";
             $temp_str = $this->_supplementOrder($order_code, "第一次失败重试");
-            if($temp_str != ""){ $notice_str_list[] = $temp_str; $need_retry_order[] = $order_code; }
+            if($temp_str != ""){ 
+                $notice_str_list[] = $temp_str;
+                $notice_result_list = explode("--", $temp_str);
+                if(array_pop($notice_result_list) != "处理成功"){
+                    $need_retry_order[] = $order_code;
+                }
+            }
         }
         
         //测试微信号通知
