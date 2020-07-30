@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use App\Service\CurlService;
+use Illuminate\Support\Facades\Cache;
 use function App\Helpers\WriteLog;
 
 class OrderController extends BaseController {
@@ -15,7 +16,13 @@ class OrderController extends BaseController {
     private $pay_status_change = ["NOTPAY" => 1, "PAYED" => 2];
     private $order_status_change = ["DONE"=>4,"NOTPAY"=>1,"PAYED"=>2,"WAIT_BUYER_CONFIRM"=>3, "REVIEW_PASS"=>2];
     private $express_status_change = ["DONE"=>1, "PENDING"=>0, "PARTAIL"=>2];
-    private $notice_open_id = ["ok_TasyOkq8A0TgJzsZjTZDP4Y3g", "ok_Tas1JFVoB-gothrwjCMvatUxM", "ok_Tas7S8rDGbcYce8u97I6g7HK8","ok_Tas0sgOXfy5X0DrQmQR3PjCQA"];
+    private $notice_open_id = [
+        "ok_TasyOkq8A0TgJzsZjTZDP4Y3g",
+        "ok_Tas1JFVoB-gothrwjCMvatUxM",
+        "ok_Tas7S8rDGbcYce8u97I6g7HK8",
+        "ok_Tas0sgOXfy5X0DrQmQR3PjCQA",
+        "ok_Tasz5KTXQ0BCqq5dPiwvMKC8Q"
+    ];
 
     public function __construct() {
         parent::__construct();
@@ -79,6 +86,7 @@ class OrderController extends BaseController {
         $exist_order_list = DB::table("t_order")->select($field_list)->whereIn("order_code", $order_code_array)->get();
 
         $notice_str_list = [];
+        $need_retry_order = [];
         if(!empty($exist_order_list)){
             foreach($exist_order_list as $exist_order_info){
                 $temp_str = "";
@@ -91,7 +99,7 @@ class OrderController extends BaseController {
                 if($exist_order_info->express_status != $order_check_list[$exist_order_info->order_code]["express_status"]){
                     $temp_str = $this->_supplementOrder($exist_order_info->order_code, "快递状态不同步");
                 }
-                if($temp_str != ""){ $notice_str_list[] = $temp_str; }
+                if($temp_str != ""){ $notice_str_list[] = $temp_str; $need_retry_order[] = $exist_order_info->order_code; }
                 unset($order_check_list[$exist_order_info->order_code]);
             }
         }
@@ -100,13 +108,19 @@ class OrderController extends BaseController {
             $temp_str = "";
             foreach($order_check_list as $order_code => $order_check_info){
                 $temp_str = $this->_supplementOrder($order_code, "在草动中订单未找到");
-                if($temp_str != ""){ $notice_str_list[] = $temp_str; }
+                if($temp_str != ""){ $notice_str_list[] = $temp_str; $need_retry_order[] = $order_code; }
             }
         }
         
         //测试微信号通知
         if(!empty($notice_str_list)){
+            Cache::forever("caodong_order_fail", json_encode($notice_str_list));
             $this->_wechatCompanyNotice($notice_str_list);
+        }
+        
+        //分页判断
+        if($order_list["pager"]["count"] > $order_list["pager"]["page_no"]*$order_list["pager"]["page_size"]){
+            $this->_getInnisfreeOrderList($page_no + 1);
         }
     }
     
