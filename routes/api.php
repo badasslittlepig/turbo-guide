@@ -20,4 +20,5 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 //api接口
 Route::group(["middleware" => ["api"]], function () {
     Route::get("check/order", "Api\OrderController@OrderCheck");
+    Route::get("check/retryOrder", "Api\OrderController@RetryOrder");
 });
