@@ -14,12 +14,11 @@ class OrderController extends BaseController {
     //    未支付已取消  ---- 5
     
     private $pay_status_change = ["NOTPAY" => 1, "PAYED" => 2];
-    private $order_status_change = ["DONE"=>4,"NOTPAY"=>1,"PAYED"=>2,"WAIT_BUYER_CONFIRM"=>3, "REVIEW_PASS"=>2];
+    private $order_status_change = ["DONE"=>4,"NOTPAY"=>1,"PAYED"=>2,"WAIT_BUYER_CONFIRM"=>3];
     private $express_status_change = ["DONE"=>1, "PENDING"=>0, "PARTAIL"=>2];
     private $notice_open_id = [
         "ok_TasyOkq8A0TgJzsZjTZDP4Y3g",
         "ok_Tas1JFVoB-gothrwjCMvatUxM",
-        "ok_Tas7S8rDGbcYce8u97I6g7HK8",
         "ok_Tas0sgOXfy5X0DrQmQR3PjCQA",
         "ok_Tasz5KTXQ0BCqq5dPiwvMKC8Q"
     ];
@@ -39,7 +38,7 @@ class OrderController extends BaseController {
         $get_uri = "https://wmp.amorepacific.com.cn/api/systemlink/caodong/order/list?";
         $get_data = [
             "company_id"        => 2,
-            "time_end_begin"    => time()- 60,
+            "time_end_begin"    => time()- 6*60,
             "page"              => $page_no + 1,
             "pageSize"          => 3,
         ];
@@ -89,24 +88,26 @@ class OrderController extends BaseController {
         $need_retry_order = [];
         if(!empty($exist_order_list)){
             foreach($exist_order_list as $exist_order_info){
-                $temp_str = "";
-                if($exist_order_info->order_status != $order_check_list[$exist_order_info->order_code]["order_status"]){
-                    $temp_str = $this->_supplementOrder($exist_order_info->order_code, "订单状态不同步");
-                }
-                if($exist_order_info->pay_status != $order_check_list[$exist_order_info->order_code]["pay_status"]){
-                    $temp_str = $this->_supplementOrder($exist_order_info->order_code, "支付状态不同步");
-                }
-                if($exist_order_info->express_status != $order_check_list[$exist_order_info->order_code]["express_status"]){
-                    $temp_str = $this->_supplementOrder($exist_order_info->order_code, "快递状态不同步");
-                }
-                if($temp_str != ""){
-                    $notice_str_list[] = $temp_str;
-                    $notice_result_list = explode("--", $temp_str);
-                    if(array_pop($notice_result_list) != "处理成功"){
-                        $need_retry_order[] = $exist_order_info->order_code;;
+                if($order_check_list[$exist_order_info->order_code]["order_status"] != ""){
+                    $temp_str = "";
+                    if($exist_order_info->order_status != $order_check_list[$exist_order_info->order_code]["order_status"]){
+                        $temp_str = $this->_supplementOrder($exist_order_info->order_code, "订单状态不同步");
                     }
+                    if($exist_order_info->pay_status != $order_check_list[$exist_order_info->order_code]["pay_status"]){
+                        $temp_str = $this->_supplementOrder($exist_order_info->order_code, "支付状态不同步");
+                    }
+                    if($exist_order_info->express_status != $order_check_list[$exist_order_info->order_code]["express_status"]){
+                        $temp_str = $this->_supplementOrder($exist_order_info->order_code, "快递状态不同步");
+                    }
+                    if($temp_str != ""){
+                        $notice_str_list[] = $temp_str;
+                        $notice_result_list = explode("--", $temp_str);
+                        if(array_pop($notice_result_list) != "处理成功"){
+                            $need_retry_order[] = $exist_order_info->order_code;;
+                        }
+                    }
+                    unset($order_check_list[$exist_order_info->order_code]);
                 }
-                unset($order_check_list[$exist_order_info->order_code]);
             }
         }
         
@@ -148,9 +149,7 @@ class OrderController extends BaseController {
         $result_data = json_decode($result_json_str, TRUE);
         if($result_data["code"] == "SUCCESS"){
             $return_str .= $result_data["message"];
-            if(\config('common.notice_level') == "notice"){
-                return $return_str;
-            }
+            return $return_str;
         }else{
            return $return_str.$result_data["message"]; 
         }
@@ -207,14 +206,16 @@ class OrderController extends BaseController {
         $notice_str_list = [];
         $need_retry_order = [];
         $retry_order_list = json_decode(Cache::pull("caodong_order_fail"), TRUE);
-        foreach($retry_order_list as $order_code){
-            $temp_str = "";
-            $temp_str = $this->_supplementOrder($order_code, "第一次失败重试");
-            if($temp_str != ""){ 
-                $notice_str_list[] = $temp_str;
-                $notice_result_list = explode("--", $temp_str);
-                if(array_pop($notice_result_list) != "处理成功"){
-                    $need_retry_order[] = $order_code;
+        if(!empty($retry_order_list)){
+            foreach($retry_order_list as $order_code){
+                $temp_str = "";
+                $temp_str = $this->_supplementOrder($order_code, "第一次失败重试");
+                if($temp_str != ""){ 
+                    $notice_str_list[] = $temp_str;
+                    $notice_result_list = explode("--", $temp_str);
+                    if(array_pop($notice_result_list) != "处理成功"){
+                        $need_retry_order[] = $order_code;
+                    }
                 }
             }
         }
