@@ -38,7 +38,7 @@ class OrderController extends BaseController {
         $get_uri = "https://wmp.amorepacific.com.cn/api/systemlink/caodong/order/list?";
         $get_data = [
             "company_id"        => 2,
-            "time_end_begin"    => time()- 20*60,
+            "time_end_begin"    => time()- 6*60,
             "page"              => $page_no + 1,
             "pageSize"          => 3,
         ];
@@ -92,7 +92,7 @@ class OrderController extends BaseController {
             "time"          => $this->now_date,
         ];
         WriteLog($log_data, "notice", "sql_return");
-        
+ exit;       
         $notice_str_list = [];
         $need_retry_order = [];
         if(!empty($exist_order_list)){
