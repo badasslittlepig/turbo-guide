@@ -12,6 +12,7 @@ class BaseController extends Controller {
 
     public function __construct() {
         error_reporting(0);
+        date_default_timezone_set('Asia/Shanghai');
         $this->now_date = date("Y-m-d H:i:s");
         $this->now_time_stamp = time();
     }

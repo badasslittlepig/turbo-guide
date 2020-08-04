@@ -61,7 +61,7 @@ class OrderController extends BaseController {
 //            
 //            exit;
 //        }
-     
+        if(count($order_list) < 1){ exit;}
         $order_code_array = [];
         $order_check_list = [];
         foreach($order_list["list"] as $order_info){
@@ -82,8 +82,17 @@ class OrderController extends BaseController {
         }
         //订单校验
         $field_list = ["order_code", "order_status", "pay_status", "express_status"];
+        DB::enableQueryLog();
         $exist_order_list = DB::table("t_order")->select($field_list)->whereIn("order_code", $order_code_array)->get();
-
+        $query_sql = DB::getQueryLog();
+        $log_data= [
+            "msg_id"        => md5(json_encode($exist_order_list)),
+            "query_sql"     => end($query_sql),
+            "response"      => $exist_order_list,
+            "time"          => $this->now_date,
+        ];
+        WriteLog($log_data, "notice", "sql_return");
+ exit;       
         $notice_str_list = [];
         $need_retry_order = [];
         if(!empty($exist_order_list)){
