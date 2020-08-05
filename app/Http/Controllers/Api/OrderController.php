@@ -19,6 +19,7 @@ class OrderController extends BaseController {
     private $notice_open_id = [
         "ok_TasyOkq8A0TgJzsZjTZDP4Y3g",
         "ok_Tas1JFVoB-gothrwjCMvatUxM",
+        "ok_Tas7S8rDGbcYce8u97I6g7HK8",
         "ok_Tas0sgOXfy5X0DrQmQR3PjCQA",
         "ok_Tasz5KTXQ0BCqq5dPiwvMKC8Q"
     ];
@@ -78,6 +79,8 @@ class OrderController extends BaseController {
                 }else if($order_info["pay_status"] == "NOTPAY"){
                     $order_check_list[$order_info["order_id"]]["order_status"] = 5;
                 }
+            }else{
+                $order_check_list[$order_info["order_id"]]["order_status"] = "";
             }
         }
         //订单校验
@@ -115,8 +118,8 @@ class OrderController extends BaseController {
                             $need_retry_order[] = $exist_order_info->order_code;;
                         }
                     }
-                    unset($order_check_list[$exist_order_info->order_code]);
                 }
+                unset($order_check_list[$exist_order_info->order_code]);
             }
         }
         
