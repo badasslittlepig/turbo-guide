@@ -111,7 +111,7 @@ class OrderController extends BaseController {
                     if($exist_order_info->express_status != $order_check_list[$exist_order_info->order_code]["express_status"]){
                         $temp_str = $this->_supplementOrder($exist_order_info->order_code, "快递状态不同步");
                     }
-                    if($temp_str != ""){
+                    if($temp_str != "" && !strstr($temp_str, "处理成功")){
                         $notice_str_list[] = $temp_str;
                         $notice_result_list = explode("--", $temp_str);
                         if(array_pop($notice_result_list) != "处理成功"){
