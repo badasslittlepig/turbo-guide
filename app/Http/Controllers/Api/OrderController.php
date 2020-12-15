@@ -111,10 +111,10 @@ class OrderController extends BaseController {
                     if($exist_order_info->express_status != $order_check_list[$exist_order_info->order_code]["express_status"]){
                         $temp_str = $this->_supplementOrder($exist_order_info->order_code, "快递状态不同步");
                     }
-                    if($temp_str != "" && !strstr($temp_str, "处理成功")){
-                        $notice_str_list[] = $temp_str;
+                    if($temp_str != ""){
                         $notice_result_list = explode("--", $temp_str);
                         if(array_pop($notice_result_list) != "处理成功"){
+                            $notice_str_list[] = $temp_str;
                             $need_retry_order[] = $exist_order_info->order_code;;
                         }
                     }
@@ -128,9 +128,9 @@ class OrderController extends BaseController {
             foreach($order_check_list as $order_code => $order_check_info){
                 $temp_str = $this->_supplementOrder($order_code, "在草动中订单未找到");
                 if($temp_str != ""){
-                    $notice_str_list[] = $temp_str;
                     $notice_result_list = explode("--", $temp_str);
                     if(array_pop($notice_result_list) != "处理成功"){
+                        $notice_str_list[] = $temp_str;
                         $need_retry_order[] = $order_code;
                     }                    
                 }
