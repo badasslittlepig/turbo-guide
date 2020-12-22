@@ -19,7 +19,6 @@ class OrderController extends BaseController {
     private $notice_open_id = [
         "ok_TasyOkq8A0TgJzsZjTZDP4Y3g",
         "ok_Tas1JFVoB-gothrwjCMvatUxM",
-        "ok_Tas7S8rDGbcYce8u97I6g7HK8",
         "ok_Tas0sgOXfy5X0DrQmQR3PjCQA",
         "ok_Tasz5KTXQ0BCqq5dPiwvMKC8Q"
     ];
@@ -131,7 +130,7 @@ class OrderController extends BaseController {
                     $notice_result_list = explode("--", $temp_str);
                     if(array_pop($notice_result_list) != "处理成功"){
                         $notice_str_list[] = $temp_str;
-                        $need_retry_order[] = $order_code;
+                        $need_retry_order[] = ["order_sn"=>$order_code, "notice_time"=>1];
                     }                    
                 }
             }
@@ -219,14 +218,26 @@ class OrderController extends BaseController {
         $need_retry_order = [];
         $retry_order_list = json_decode(Cache::pull("caodong_order_fail"), TRUE);
         if(!empty($retry_order_list)){
-            foreach($retry_order_list as $order_code){
+            foreach($retry_order_list as $order_info){
                 $temp_str = "";
-                $temp_str = $this->_supplementOrder($order_code, "第一次失败重试");
-                if($temp_str != ""){ 
-                    $notice_str_list[] = $temp_str;
-                    $notice_result_list = explode("--", $temp_str);
-                    if(array_pop($notice_result_list) != "处理成功"){
-                        $need_retry_order[] = $order_code;
+                if(is_array($order_info) && $order_info["notice_time"] < 6){
+                    $temp_str = $this->_supplementOrder($order_info["order_sn"], "第".$order_info["notice_time"]."次失败重试");
+                    if($temp_str != ""){
+                        $notice_result_list = explode("--", $temp_str);
+                        if(array_pop($notice_result_list) != "处理成功"){
+                            $notice_str_list[] = $temp_str;
+                            $order_info["notice_time"] += 1;
+                            $need_retry_order[] = $order_info;
+                        }
+                    }
+                }elseif(is_string($order_info)){
+                    $temp_str = $this->_supplementOrder($order_info, "第一次失败重试");
+                    if($temp_str != ""){
+                        $notice_result_list = explode("--", $temp_str);
+                        if(array_pop($notice_result_list) != "处理成功"){
+                            $notice_str_list[] = $temp_str;
+                            $need_retry_order[] = ["order_sn"=>$order_info, "notice_time"=>3];
+                        }
                     }
                 }
             }
