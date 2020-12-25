@@ -20,7 +20,8 @@ class OrderController extends BaseController {
         "ok_TasyOkq8A0TgJzsZjTZDP4Y3g",
         "ok_Tas1JFVoB-gothrwjCMvatUxM",
         "ok_Tas0sgOXfy5X0DrQmQR3PjCQA",
-        "ok_Tasz5KTXQ0BCqq5dPiwvMKC8Q"
+        "ok_Tasz5KTXQ0BCqq5dPiwvMKC8Q",
+        "ok_Tas7S8rDGbcYce8u97I6g7HK8",
     ];
 
     public function __construct() {
@@ -130,7 +131,7 @@ class OrderController extends BaseController {
                     $notice_result_list = explode("--", $temp_str);
                     if(array_pop($notice_result_list) != "处理成功"){
                         $notice_str_list[] = $temp_str;
-                        $need_retry_order[] = ["order_sn"=>$order_code, "notice_time"=>1];
+                        $need_retry_order[] = ["order_sn"=>$order_code, "notice_time"=>3];
                     }                    
                 }
             }
